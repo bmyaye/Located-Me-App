@@ -81,11 +81,11 @@ class _MyHomePageState extends State<MyHomePage> {
             icon: Icon(Icons.message_outlined), 
             label: 'Messages'
           ),
-          NavigationDestination(
-            selectedIcon: Icon(Icons.notifications),
-            icon: Icon(Icons.notifications_outlined),
-            label: 'Notifications',
-          ),
+          // NavigationDestination(
+          //   selectedIcon: Icon(Icons.notifications),
+          //   icon: Icon(Icons.notifications_outlined),
+          //   label: 'Notifications',
+          // ),
           NavigationDestination(
             selectedIcon: Icon(Icons.account_box),
             icon: Icon(Icons.account_box_outlined),
@@ -104,9 +104,9 @@ class _MyHomePageState extends State<MyHomePage> {
         return _buildHomePage(theme);
       case 1:
         return _buildMessagesPage(theme);
+      // case 2:
+      //   return _buildNotificationsPage(theme);
       case 2:
-        return _buildNotificationsPage(theme);
-      case 3:
         return _ProfilePage(theme);
       default:
         return Container(); // Placeholder, you can replace it with an error page or something else.
@@ -128,7 +128,7 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  @override
+  // @override
   Widget _buildMessagesPage(ThemeData theme) {
     return ListView.builder(
       reverse: true,
@@ -172,32 +172,32 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  @override
-  Widget _buildNotificationsPage(ThemeData theme) {
-    return const Padding(
-      padding: EdgeInsets.all(8.0),
-      child: Column(
-        children: <Widget>[
-          Card(
-            child: ListTile(
-              leading: Icon(Icons.notifications_sharp),
-              title: Text('Notification 1'),
-              subtitle: Text('This is a notification'),
-            ),
-          ),
-          Card(
-            child: ListTile(
-              leading: Icon(Icons.notifications_sharp),
-              title: Text('Notification 2'),
-              subtitle: Text('This is a notification'),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // // @override
+  // Widget _buildNotificationsPage(ThemeData theme) {
+  //   return const Padding(
+  //     padding: EdgeInsets.all(8.0),
+  //     child: Column(
+  //       children: <Widget>[
+  //         Card(
+  //           child: ListTile(
+  //             leading: Icon(Icons.notifications_sharp),
+  //             title: Text('Notification 1'),
+  //             subtitle: Text('This is a notification'),
+  //           ),
+  //         ),
+  //         Card(
+  //           child: ListTile(
+  //             leading: Icon(Icons.notifications_sharp),
+  //             title: Text('Notification 2'),
+  //             subtitle: Text('This is a notification'),
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
-  @override
+  // @override
   Widget _ProfilePage(ThemeData theme) {
     return Center(
       child: Column(

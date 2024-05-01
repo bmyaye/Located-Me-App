@@ -2,37 +2,38 @@ import 'dart:developer';
 import 'package:bloc/bloc.dart';
 
 class SimpleBlocObserver extends BlocObserver {
-  @override
+
+  // @override
   void OnCreate(BlocBase bloc) {
     super.onCreate(bloc);
     log('OnCreate -- bloc: ${bloc.runtimeType}');
   } 
 
-  @override
+  // @override
   void OnEvent(Bloc bloc, Object? event) {
     super.onEvent(bloc, event);
     log('OnEvent -- bloc: ${bloc.runtimeType}, event: $event');
   }
 
-  @override
+  // @override
   void OnChange(BlocBase bloc, Change change) {
     super.onChange(bloc, change);
     log('OnChange -- bloc: ${bloc.runtimeType}, change: $change');
   }
 
-  @override
+  // @override
   void OnTransition(Bloc bloc, Transition transition) {
     super.onTransition(bloc, transition);
     log('OnTransition -- bloc: ${bloc.runtimeType}, transition: $transition');
   }
 
-  @override
+  // @override
   void OnError(BlocBase bloc, Object error, StackTrace stackTrace) {
     log('OnError -- bloc: ${bloc.runtimeType}, error: $error');
     super.onError(bloc, error, stackTrace);
   }
 
-  @override
+  // @override
   void OnClose(BlocBase bloc) {
     super.onClose(bloc);
     log('OnClose -- bloc: ${bloc.runtimeType}');

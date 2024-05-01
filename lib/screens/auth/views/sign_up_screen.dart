@@ -16,6 +16,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 	final passwordController = TextEditingController();
   final emailController = TextEditingController();
 	final nameController = TextEditingController();
+  final phoneNumberController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 	IconData iconPassword = CupertinoIcons.eye_fill;
 	bool obscurePassword = true;
@@ -26,6 +27,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 	bool containsNumber = false;
 	bool containsSpecialChar = false;
 	bool contains8Length = false;
+
 
   @override
   Widget build(BuildContext context) {
@@ -45,10 +47,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
 			},
 			child: Form(
         key: _formKey,
-        child: Center(
+        child: SingleChildScrollView(
+          child: Center(
           child: Column(
             children: [
-              const SizedBox(height: 20),
+              const SizedBox(height: 10),
               SizedBox(
                 width: MediaQuery.of(context).size.width * 0.9,
                 child: MyTextField(
@@ -223,9 +226,31 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   }
                 ),
               ),
+
+              const SizedBox(height: 10),
+              SizedBox(
+                width: MediaQuery.of(context).size.width * 0.9,
+                child: MyTextField(
+                  controller: phoneNumberController,
+                  hintText: 'Phone Number',
+                  obscureText: false,
+                  keyboardType: TextInputType.phone,
+                  prefixIcon: const Icon(CupertinoIcons.phone_fill),
+                  validator: (val) {
+                    if(val!.isEmpty) {
+                      return 'Please fill in this field';													
+                    } else if(val.length > 15) {
+                      return 'Phone number too long';
+                    }
+                    return null;
+                  },
+                ),
+              ),
+
               SizedBox(height: MediaQuery.of(context).size.height * 0.02),
               !signUpRequired
                 ? SizedBox(
+                    // resizeToavoidBottomPadding: false,
                     width: MediaQuery.of(context).size.width * 0.5,
                     child: TextButton(
                       onPressed: () {
@@ -233,6 +258,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           MyUser myUser = MyUser.empty;
                           myUser.email = emailController.text;
                           myUser.name = nameController.text;
+                          myUser.phoneNumber = phoneNumberController.text;
                           
                           setState(() {
                             context.read<SignUpBloc>().add(
@@ -245,11 +271,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         }
                       },
                       style: TextButton.styleFrom(
-                        elevation: 3.0,
+                        elevation: 2.0,
                         backgroundColor: Theme.of(context).colorScheme.primary,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(60)
+                          borderRadius: BorderRadius.circular(30)
                         )
                       ),
                       child: const Padding(
@@ -269,6 +295,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 : const CircularProgressIndicator()
             ],
           ),
+        )
+        
         ),
       ),
 		);
