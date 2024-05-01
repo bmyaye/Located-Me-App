@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "472617774709",
+    "project_id": "locate-me-e96ee",
+    "storage_bucket": "locate-me-e96ee.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:472617774709:android:c607859c80f4eeb008d23c",
+        "android_client_info": {
+          "package_name": "com.example.location_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC6SJTeZ0q-L_3-P5EUwBc_atD4bjPqOTI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
