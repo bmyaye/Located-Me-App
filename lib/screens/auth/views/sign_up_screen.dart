@@ -15,7 +15,7 @@ class SignUpScreen extends StatefulWidget {
 class _SignUpScreenState extends State<SignUpScreen> {
 	final passwordController = TextEditingController();
   final emailController = TextEditingController();
-	final nameController = TextEditingController();
+	final usernameController = TextEditingController();
   final phoneNumberController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 	IconData iconPassword = CupertinoIcons.eye_fill;
@@ -211,8 +211,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
               SizedBox(
                 width: MediaQuery.of(context).size.width * 0.9,
                 child: MyTextField(
-                  controller: nameController,
-                  hintText: 'Name',
+                  controller: usernameController,
+                  hintText: 'Username',
                   obscureText: false,
                   keyboardType: TextInputType.name,
                   prefixIcon: const Icon(CupertinoIcons.person_fill),
@@ -220,7 +220,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     if(val!.isEmpty) {
                       return 'Please fill in this field';													
                     } else if(val.length > 30) {
-                      return 'Name too long';
+                      return 'Username too long';
                     }
                     return null;
                   }
@@ -257,7 +257,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         if (_formKey.currentState!.validate()) {
                           MyUser myUser = MyUser.empty;
                           myUser.email = emailController.text;
-                          myUser.name = nameController.text;
+                          myUser.password = passwordController.text;
+                          myUser.username = usernameController.text;
                           myUser.phoneNumber = phoneNumberController.text;
                           
                           setState(() {
