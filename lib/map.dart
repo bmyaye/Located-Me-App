@@ -45,7 +45,7 @@ class _MapsPageState extends State<MapsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Maps'),
+        title: const Text('Maps'),
       ),
       body: FutureBuilder(
         future: _getLocation(),
@@ -60,7 +60,7 @@ class _MapsPageState extends State<MapsPage> {
                   zoom: 18),
             );
           } else {
-            return Center(
+            return const Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
@@ -78,11 +78,11 @@ class _MapsPageState extends State<MapsPage> {
     return Container(
       width: 40,
       height: 40,
-      padding: EdgeInsets.all(2),
+      padding: const  EdgeInsets.all(2),
       decoration: BoxDecoration(
         color: Colors.white10,
         borderRadius: BorderRadius.circular(100),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
             color: Colors.grey,
             offset: Offset(0, 3),

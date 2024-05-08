@@ -106,7 +106,7 @@ class _SignInScreenState extends State<SignInScreen> {
                       if (_formKey.currentState!.validate()) {
                         context.read<SignInBloc>().add(SignInRequired(
                           emailController.text,
-                          passwordController.text)
+                          passwordController.text,)
                         );
                       }
                     },
