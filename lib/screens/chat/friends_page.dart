@@ -90,6 +90,8 @@ class FriendManager {
 
   FriendManager(this.context);
 
+  // final databaseReference = FirebaseDatabase.instance.ref("StoreData");
+
   void showAddFriendDialog() {
     TextEditingController usernameController = TextEditingController();
     TextEditingController emailController = TextEditingController();
