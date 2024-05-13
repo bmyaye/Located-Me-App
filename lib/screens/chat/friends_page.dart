@@ -48,11 +48,9 @@ class UserListBuilderState extends State<buildUserList> {
     String friendId = document.id; // Extract friendId (document ID)
     Map<String, dynamic> data = document.data() as Map<String, dynamic>;
     print('Document data: $data');
-    String friendUsername = data['username'] ?? ''; // Extract friendName from document
 
     // Check if friendId is not empty before fetching the document
     if (friendId.isNotEmpty) {
-      print('Friend ID: $friendId'); // Debugging statement
       return FutureBuilder<DocumentSnapshot>(
         future: FirebaseFirestore.instance.collection('users').doc(friendId).get(),
         builder: (context, AsyncSnapshot<DocumentSnapshot> snapshot) {

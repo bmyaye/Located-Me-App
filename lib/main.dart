@@ -6,6 +6,7 @@ import 'package:location_app/app.dart';
 import 'package:location_app/map.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:location_app/screens/chat/group_page.dart';
 import 'package:location_app/simple_bloc_observer.dart';
 import 'package:user_repository/user_repository.dart';
 // import 'blocs/authentication_bloc/authentication_bloc.dart';
@@ -157,96 +158,19 @@ class _MyHomePageState extends State<MyHomePage> {
               child: const Text('Add Friends'),
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: ElevatedButton(
+              onPressed: () {
+                GroupManager(context).showCreateGroupDialog();
+              },
+              child: const Text('Create Group'),
+            ),
+          ),
         ],
       ),
     );
   }
-
-  // @override
-  // Widget _ProfilePage(BuildContext context) {
-  //   CollectionReference users = FirebaseFirestore.instance.collection('users');
-
-  //   return Center(
-  //     child: Column(
-  //       children: <Widget>[
-  //         ListTile(
-  //           leading: const Icon(Icons.account_circle_outlined),
-  //           title: const Text('My Account'),
-  //           subtitle: FutureBuilder<DocumentSnapshot>(
-  //             future: users.doc(username).get(),
-  //             builder: (BuildContext context, AsyncSnapshot<DocumentSnapshot> snapshot) {
-  //               if (snapshot.connectionState == ConnectionState.waiting) {
-  //                 return const Text('Loading...'); // Show a loading indicator while waiting for data
-  //               }
-  //               if (snapshot.hasError) {
-  //                 return Text('Error: ${snapshot.error}');
-  //               }
-  //               if (snapshot.hasData && snapshot.data!.exists) {
-  //                 Map<String, dynamic> data = snapshot.data!.data() as Map<String, dynamic>;
-  //                 return Text(data['username']);
-  //               } else {
-  //                 return const Text("Document does not exist");
-  //               }
-  //             },
-  //           ),
-  //         ),
-  //         const ListTile(
-  //           leading: Icon(Icons.location_on_outlined),
-  //           title: Text('Location'),
-  //         ),
-  //         const ListTile(
-  //           leading: Icon(Icons.settings_outlined),
-  //           title: Text('Settings'),
-  //         ),
-  //         const ListTile(
-  //           leading: Icon(Icons.help_center_outlined),
-  //           title: Text('Help Center'),
-  //         ),
-  //         ElevatedButton(
-  //           onPressed: () {
-  //             context.read<SignInBloc>().add(SignOutRequired());
-  //           },
-  //           child: const Text('Sign Out'),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
-
-  // Widget _ProfilePage(BuildContext context) {
-  //   CollectionReference users = FirebaseFirestore.instance.collection('users');
-
-  //   return Center(
-  //     child: Column(
-  //       children: <Widget>[
-  //         ListTile(
-  //           leading: const Icon(Icons.account_circle_outlined),
-  //           title: const Text('My Account'),
-  //           // subtitle: Text('test'),
-  //           subtitle: Text(users.id.toString()),
-  //         ),
-  //         const ListTile(
-  //           leading: Icon(Icons.location_on_outlined),
-  //           title: Text('Location'),
-  //         ),
-  //         const ListTile(
-  //           leading: Icon(Icons.settings_outlined),
-  //           title: Text('Settings'),
-  //         ),
-  //         const ListTile(
-  //           leading: Icon(Icons.help_center_outlined),
-  //           title: Text('Help Center'),
-  //         ),
-  //         ElevatedButton(
-  //           onPressed: () {
-  //             context.read<SignInBloc>().add(SignOutRequired());
-  //           },
-  //           child: const Text('Sign Out'),
-  //         ),
-  //       ],
-  //     )
-  //   );
-  // }
 
   Widget _ProfilePage(BuildContext context) {
     CollectionReference users = FirebaseFirestore.instance.collection('users');

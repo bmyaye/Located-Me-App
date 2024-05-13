@@ -121,7 +121,8 @@ class _ChatPageState extends State<ChatPage> {
                                     child: Container(
                                       padding: const EdgeInsets.all(8.0),
                                       decoration: BoxDecoration(
-                                        color: isSentMessage ? Colors.blue.withOpacity(0.2) : Colors.green.withOpacity(0.2),
+                                        color: isSentMessage ? Colors.blue.withOpacity(0.2) : Colors.yellow.withOpacity(0.2),
+                                        // color: isSentMessage ? Colors.blue.withOpacity(0.2) : Colors.green.withOpacity(0.2),
                                         borderRadius: isSentMessage
                                             ? const BorderRadius.only(
                                                 topLeft: Radius.circular(12.0),
@@ -199,20 +200,33 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
-  void _sendMessage(String receiverId) async {
+  void _sendMessage(String receiverId,) async {
     String messageContent = _messageController.text.trim();
+
     if (messageContent.isNotEmpty) {
       String userId = FirebaseAuth.instance.currentUser!.uid;
 
       // Reference to the friend's document
-      DocumentReference friendDocRef =
+      DocumentReference friendId =
           FirebaseFirestore.instance.collection('users').doc(receiverId);
 
+      // Reference to the current user's document
+      DocumentReference currentUserDocRef = 
+          FirebaseFirestore.instance.collection('users').doc(userId);
+      
+      // Get the current user's username
+      Map<String, dynamic> currentUserData = (await currentUserDocRef.get()).data() as Map<String, dynamic>;
+      
+      // Define the current user's username
+      String currentUsername = currentUserData['username']; 
+
       // Add the message to the friend's "messages" subcollection
-      await friendDocRef.collection('messages').add({
+      await friendId.collection('messages').add({
         'content': messageContent,
         'senderId': userId,
+        'senderUsername': currentUsername,
         'receiverId': receiverId,
+        'receiverUsername': widget.friendName,
         'timestamp': FieldValue.serverTimestamp(),
       });
 
@@ -220,4 +234,3 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 }
-
