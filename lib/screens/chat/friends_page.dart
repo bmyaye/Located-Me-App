@@ -11,12 +11,8 @@ class buildUserList extends StatefulWidget {
 class UserListBuilderState extends State<buildUserList> {
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('users')
-          .doc(FirebaseAuth.instance.currentUser!.uid)
-          .collection('friends')
-          .snapshots(),
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _fetchFriendsAndGroups(),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return Text('Error: ${snapshot.error}');
@@ -28,60 +24,88 @@ class UserListBuilderState extends State<buildUserList> {
           );
         }
 
-        // Check if there are no friends
-        if (snapshot.data!.docs.isEmpty) {
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return const Center(
-            child: Text('You have no friends yet.'),
+            child: Text('No data available.'),
           );
         }
 
+        Map<String, dynamic> data = snapshot.data!;
+        List<DocumentSnapshot> friends = data['friends'];
+        List<DocumentSnapshot> groups = data['groups'];
+
         return ListView(
-          children: snapshot.data!.docs
-              .map<Widget>((doc) => _buildUserListItem(doc))
-              .toList(),
+          children: [
+            ...friends.map((doc) => _buildUserListItem(doc, 'friend')).toList(),
+            ...groups.map((doc) => _buildUserListItem(doc, 'group')).toList(),
+          ],
         );
       },
     );
   }
 
-  Widget _buildUserListItem(DocumentSnapshot document) {
-    String friendId = document.id; // Extract friendId (document ID)
-    Map<String, dynamic> data = document.data() as Map<String, dynamic>;
-    print('Document data: $data');
+  Future<Map<String, dynamic>> _fetchFriendsAndGroups() async {
+    User? currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) {
+      throw Exception('User is not authenticated');
+    }
 
-    // Check if friendId is not empty before fetching the document
-    if (friendId.isNotEmpty) {
-      return FutureBuilder<DocumentSnapshot>(
-        future: FirebaseFirestore.instance.collection('users').doc(friendId).get(),
-        builder: (context, AsyncSnapshot<DocumentSnapshot> snapshot) {
-          if (snapshot.connectionState == ConnectionState.done) {
-            if (snapshot.hasData && snapshot.data != null) {
-              var friendUsername = data['username'];
-              print('Friend username: $friendUsername'); // Debugging statement
-              return ListTile(
-                trailing: IconButton(
-                  icon: const Icon(Icons.arrow_forward_ios),
-                  onPressed: () {
-                    ChatManager().openChatPage(context, friendId, friendUsername);
-                  },
-                ),
-                title: Text(friendUsername),
-              );
-            } else {
-              print('Friend data snapshot is empty'); // Debugging statement
-              return const Text("Friend data not found");
-            }
-          }
-          return const CircularProgressIndicator();
-        },
+    QuerySnapshot friendsSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentUser.uid)
+        .collection('friends')
+        .get();
+
+    QuerySnapshot groupsSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentUser.uid)
+        .collection('groups')
+        .get();
+
+    return {
+      'friends': friendsSnapshot.docs,
+      'groups': groupsSnapshot.docs,
+    };
+  }
+
+  Widget _buildUserListItem(DocumentSnapshot document, String type) {
+    Map<String, dynamic> data = document.data() as Map<String, dynamic>;
+
+    if (type == 'friend') {
+      String friendUsername = data['username'];
+      return ListTile(
+        trailing: IconButton(
+          icon: const Icon(Icons.arrow_forward_ios),
+          onPressed: () {
+            ChatManager().openChatPage(context,
+              friendId: document.id,
+              friendName: friendUsername,
+            );
+          },
+        ),
+        title: Text(friendUsername),
+      );
+    } else if (type == 'group') {
+      String groupName = data['group name'];
+      return ListTile(
+        trailing: IconButton(
+          icon: const Icon(Icons.arrow_forward_ios),
+          onPressed: () {
+            ChatManager().openChatPage(context,
+              groupId: document.id,
+              groupName: groupName,
+            );
+          },
+        ),
+        title: Text(groupName),
       );
     } else {
-      print('Friend ID is empty'); // Debugging statement
-      return const SizedBox(); // Return an empty SizedBox if friendId is empty
+      return const SizedBox();
     }
   }
 
 }
+
 
 class FriendManager {
   final BuildContext context;
@@ -212,6 +236,74 @@ class FriendManager {
           ],
         );
       },
+    );
+  }
+}
+
+class GroupList extends StatefulWidget {
+  @override
+  _GroupListState createState() => _GroupListState();
+}
+
+class _GroupListState extends State<GroupList> {
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('users')
+          .doc(FirebaseAuth.instance.currentUser!.uid)
+          .collection('groups')
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Text('Error: ${snapshot.error}');
+        }
+
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        }
+
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return const Center(
+            child: Text('You have no groups yet.'),
+          );
+        }
+
+        return ListView(
+          children: snapshot.data!.docs
+              .map<Widget>((doc) => _buildGroupListItem(doc))
+              .toList(),
+        );
+      },
+    );
+  }
+
+  Widget _buildGroupListItem(DocumentSnapshot document) {
+    Map<String, dynamic> data = document.data() as Map<String, dynamic>;
+    String groupId = document.id;
+    String groupName = data['name'];
+
+    return ListTile(
+      title: Text(groupName),
+      trailing: IconButton(
+        icon: const Icon(Icons.arrow_forward_ios),
+        onPressed: () {
+          // Navigate to ChatPage
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ChatPage(
+                friendId: '',
+                friendName: '',
+                groupId: groupId,
+                groupName: groupName,
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }

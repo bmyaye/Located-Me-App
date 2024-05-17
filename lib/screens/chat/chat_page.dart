@@ -3,13 +3,18 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class ChatManager {
-  void openChatPage(BuildContext context, String friendId, String friendName) {
+  void openChatPage(
+    BuildContext context,
+    {String? friendId, String? friendName, String? groupId, String? groupName}
+  ) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ChatPage(
           friendId: friendId,
           friendName: friendName,
+          groupId: groupId,
+          groupName: groupName,
         ),
       ),
     );
@@ -17,10 +22,17 @@ class ChatManager {
 }
 
 class ChatPage extends StatefulWidget {
-  final String friendId;
-  final String friendName;
+  final String? friendId;
+  final String? friendName;
+  final String? groupId;
+  final String? groupName;
 
-  ChatPage({required this.friendId, required this.friendName});
+  ChatPage({
+    this.friendId,
+    this.friendName,
+    this.groupId,
+    this.groupName,
+  });
 
   @override
   _ChatPageState createState() => _ChatPageState();
@@ -33,19 +45,30 @@ class _ChatPageState extends State<ChatPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.friendName),
+        title: Text(widget.friendName ?? widget.groupName ?? 'Chat'),
       ),
       body: SafeArea(
         child: Column(
           children: [
             Expanded(
               child: StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance
-                    .collection('users')
-                    .doc(FirebaseAuth.instance.currentUser!.uid)
-                    .collection('messages')
-                    .orderBy('timestamp', descending: true)
-                    .snapshots(),
+                stream: widget.friendId != null
+                    ? FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(FirebaseAuth.instance.currentUser!.uid)
+                        .collection('friends')
+                        .doc(widget.friendId)
+                        .collection('messages')
+                        .orderBy('timestamp', descending: true)
+                        .snapshots()
+                    : FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(FirebaseAuth.instance.currentUser!.uid)
+                        .collection('groups')
+                        .doc(widget.groupId)
+                        .collection('messages')
+                        .orderBy('timestamp', descending: true)
+                        .snapshots(),
                 builder: (context, currentUserSnapshot) {
                   if (currentUserSnapshot.connectionState == ConnectionState.waiting) {
                     return const Center(
@@ -53,107 +76,57 @@ class _ChatPageState extends State<ChatPage> {
                     );
                   }
                   if (currentUserSnapshot.hasData) {
-                    List<DocumentSnapshot> currentUserMessages = currentUserSnapshot.data!.docs;
-                    return StreamBuilder<QuerySnapshot>(
-                      stream: FirebaseFirestore.instance
-                          .collection('users')
-                          .doc(widget.friendId)
-                          .collection('messages')
-                          .orderBy('timestamp', descending: true)
-                          .snapshots(),
-                      builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> friendSnapshot) {
-                        if (friendSnapshot.connectionState == ConnectionState.waiting) {
-                          return const Center(
-                            child: CircularProgressIndicator(),
-                          );
-                        }
-                        if (friendSnapshot.hasData) {
-                          List<DocumentSnapshot> friendMessages = friendSnapshot.data!.docs;
-                          // Combine and sort messages from both users
-                          List<DocumentSnapshot> allMessages = [...currentUserMessages, ...friendMessages];
-                          allMessages.sort((a, b) {
-                            Timestamp? timestampA = a['timestamp'];
-                            Timestamp? timestampB = b['timestamp'];
-                            // Check if timestamps are not null before comparing
-                            if (timestampA != null && timestampB != null) {
-                              return timestampB.compareTo(timestampA);
-                            } else {
-                              // Handle case where one or both timestamps are null
-                              // For example, if timestampA is null but timestampB is not,
-                              // we want to prioritize the message with a non-null timestamp
-                              if (timestampA == null && timestampB != null) {
-                                return 1;
-                              } else if (timestampA != null && timestampB == null) {
-                                return -1;
-                              } else {
-                                // If both timestamps are null, consider them equal
-                                return 0;
-                              }
-                            }
-                          });
+                    List<DocumentSnapshot> messages = currentUserSnapshot.data!.docs;
+                    return ListView.builder(
+                      reverse: true,
+                      itemCount: messages.length,
+                      itemBuilder: (context, index) {
+                        var message = messages[index];
+                        bool isSentMessage = message['senderId'] == FirebaseAuth.instance.currentUser!.uid;
+                        // String senderName = isSentMessage ? 'You' : message['senderName'];
 
-                          return ListView.builder(
-                            reverse: true,
-                            itemCount: allMessages.length,
-                            itemBuilder: (context, index) {
-                              var message = allMessages[index];
-                              bool isSentMessage = message['senderId'] == FirebaseAuth.instance.currentUser!.uid;
-
-                              // Display the sender's name above each message
-                              // String senderName = isSentMessage ? '' : widget.friendName;
-
-                              return Column(
-                                crossAxisAlignment: isSentMessage ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                                children: [
-                                  // Display the sender name above each message
-                                  const Padding(
-                                    padding: EdgeInsets.symmetric(vertical: 4.0, horizontal: 16.0),
-                                    // child: Text(
-                                    //   senderName,
-                                    //   style: TextStyle(
-                                    //     fontWeight: FontWeight.bold,
-                                    //     color: isSentMessage ? Colors.blue : Colors.green,
-                                    //   ),
-                                    // ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                                    child: Container(
-                                      padding: const EdgeInsets.all(8.0),
-                                      decoration: BoxDecoration(
-                                        color: isSentMessage ? Colors.blue.withOpacity(0.2) : Colors.yellow.withOpacity(0.2),
-                                        // color: isSentMessage ? Colors.blue.withOpacity(0.2) : Colors.green.withOpacity(0.2),
-                                        borderRadius: isSentMessage
-                                            ? const BorderRadius.only(
-                                                topLeft: Radius.circular(12.0),
-                                                bottomLeft: Radius.circular(12.0),
-                                                bottomRight: Radius.circular(12.0),
-                                              )
-                                            : const BorderRadius.only(
-                                                topRight: Radius.circular(12.0),
-                                                bottomLeft: Radius.circular(12.0),
-                                                bottomRight: Radius.circular(12.0),
-                                              ),
-                                      ),
-                                      child: Text(
-                                        message['content'],
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              );
-                            },
-                          );
-                        } else {
-                          // Handle case where friend's messages snapshot has no data
-                          return const Center(
-                            child: Text('No messages available.'),
-                          );
-                        }
+                      return Column(
+                          crossAxisAlignment: isSentMessage ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 8.0), 
+                            // const Padding(
+                            //   padding: EdgeInsets.symmetric(vertical: 4.0, horizontal: 16.0),
+                            //   child: Text(
+                            //     senderName,
+                            //     style: TextStyle(
+                            //       fontWeight: FontWeight.bold,
+                            //       color: isSentMessage ? Colors.blue : Colors.green,
+                            //     ),
+                            //   ),
+                            // ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                              child: Container(
+                                padding: const EdgeInsets.all(8.0),
+                                decoration: BoxDecoration(
+                                  color: isSentMessage ? Colors.blue.withOpacity(0.2) : Colors.yellow.withOpacity(0.2),
+                                  borderRadius: isSentMessage
+                                      ? const BorderRadius.only(
+                                          topLeft: Radius.circular(12.0),
+                                          bottomLeft: Radius.circular(12.0),
+                                          bottomRight: Radius.circular(12.0),
+                                        )
+                                      : const BorderRadius.only(
+                                          topRight: Radius.circular(12.0),
+                                          bottomLeft: Radius.circular(12.0),
+                                          bottomRight: Radius.circular(12.0),
+                                        ),
+                                ),
+                                child: Text(
+                                  message['content'],
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
                       },
                     );
                   } else {
-                    // Handle case where current user's messages snapshot has no data
                     return const Center(
                       child: Text('No messages available.'),
                     );
@@ -187,7 +160,7 @@ class _ChatPageState extends State<ChatPage> {
                     ),
                     IconButton(
                       icon: const Icon(Icons.send),
-                      onPressed: () => _sendMessage(widget.friendId),
+                      onPressed: () => _sendMessage(widget.friendId ?? widget.groupId ?? ''),
                       color: Colors.lightBlue,
                     ),
                   ],
@@ -206,27 +179,45 @@ class _ChatPageState extends State<ChatPage> {
     if (messageContent.isNotEmpty) {
       String userId = FirebaseAuth.instance.currentUser!.uid;
 
-      // Reference to the friend's document
-      DocumentReference friendId =
-          FirebaseFirestore.instance.collection('users').doc(receiverId);
-
-      // Reference to the current user's document
       DocumentReference currentUserDocRef = 
           FirebaseFirestore.instance.collection('users').doc(userId);
-      
-      // Get the current user's username
+
       Map<String, dynamic> currentUserData = (await currentUserDocRef.get()).data() as Map<String, dynamic>;
-      
-      // Define the current user's username
+
       String currentUsername = currentUserData['username']; 
 
-      // Add the message to the friend's "messages" subcollection
-      await friendId.collection('messages').add({
+      // DocumentReference friendId =
+      //     FirebaseFirestore.instance.collection('users').doc(receiverId);
+
+      print(receiverId);
+      
+      DocumentReference messageRef;
+      if (widget.friendId != null) {
+        messageRef = FirebaseFirestore.instance
+            .collection('users')
+            .doc(userId)
+            .collection('friends')
+            .doc(widget.friendId)
+            .collection('messages')
+            .doc();
+      } else if (widget.groupId != null) {
+        messageRef = FirebaseFirestore.instance
+            .collection('users')
+            .doc(userId)
+            .collection('groups')
+            .doc(widget.groupId)
+            .collection('messages')
+            .doc();
+      } else {
+        throw Exception('Both friendId and groupId are null.');
+      }
+
+      await messageRef.set({
         'content': messageContent,
         'senderId': userId,
-        'senderUsername': currentUsername,
-        'receiverId': receiverId,
-        'receiverUsername': widget.friendName,
+        'senderName': currentUsername,
+        // 'receiverId': friendId.id,
+        // 'receiverUsername': widget.friendName,
         'timestamp': FieldValue.serverTimestamp(),
       });
 
