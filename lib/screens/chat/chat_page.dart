@@ -2,25 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-class ChatManager {
-  void openChatPage(
-    BuildContext context,
-    {String? friendId, String? friendName, String? groupId, String? groupName}
-  ) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ChatPage(
-          friendId: friendId,
-          friendName: friendName,
-          groupId: groupId,
-          groupName: groupName,
-        ),
-      ),
-    );
-  }
-}
-
 class ChatPage extends StatefulWidget {
   final String? friendId;
   final String? friendName;
@@ -69,36 +50,25 @@ class _ChatPageState extends State<ChatPage> {
                         .collection('messages')
                         .orderBy('timestamp', descending: true)
                         .snapshots(),
-                builder: (context, currentUserSnapshot) {
-                  if (currentUserSnapshot.connectionState == ConnectionState.waiting) {
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(
                       child: CircularProgressIndicator(),
                     );
                   }
-                  if (currentUserSnapshot.hasData) {
-                    List<DocumentSnapshot> messages = currentUserSnapshot.data!.docs;
+                  if (snapshot.hasData) {
+                    List<DocumentSnapshot> messages = snapshot.data!.docs;
                     return ListView.builder(
                       reverse: true,
                       itemCount: messages.length,
                       itemBuilder: (context, index) {
                         var message = messages[index];
                         bool isSentMessage = message['senderId'] == FirebaseAuth.instance.currentUser!.uid;
-                        // String senderName = isSentMessage ? 'You' : message['senderName'];
 
-                      return Column(
+                        return Column(
                           crossAxisAlignment: isSentMessage ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                           children: [
                             const SizedBox(height: 8.0), 
-                            // const Padding(
-                            //   padding: EdgeInsets.symmetric(vertical: 4.0, horizontal: 16.0),
-                            //   child: Text(
-                            //     senderName,
-                            //     style: TextStyle(
-                            //       fontWeight: FontWeight.bold,
-                            //       color: isSentMessage ? Colors.blue : Colors.green,
-                            //     ),
-                            //   ),
-                            // ),
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 16.0),
                               child: Container(
@@ -160,7 +130,7 @@ class _ChatPageState extends State<ChatPage> {
                     ),
                     IconButton(
                       icon: const Icon(Icons.send),
-                      onPressed: () => _sendMessage(widget.friendId ?? widget.groupId ?? ''),
+                      onPressed: () => _sendMessage(widget.friendId, widget.groupId),
                       color: Colors.lightBlue,
                     ),
                   ],
@@ -173,55 +143,85 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
-  void _sendMessage(String receiverId,) async {
+  void _sendMessage(String? friendId, String? groupId) async {
     String messageContent = _messageController.text.trim();
 
     if (messageContent.isNotEmpty) {
       String userId = FirebaseAuth.instance.currentUser!.uid;
+      String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
 
-      DocumentReference currentUserDocRef = 
-          FirebaseFirestore.instance.collection('users').doc(userId);
+      Map<String, dynamic> messageData = {
+        'senderId': userId,
+        'content': messageContent,
+        'timestamp': FieldValue.serverTimestamp(),
+      };
 
-      Map<String, dynamic> currentUserData = (await currentUserDocRef.get()).data() as Map<String, dynamic>;
-
-      String currentUsername = currentUserData['username']; 
-
-      // DocumentReference friendId =
-      //     FirebaseFirestore.instance.collection('users').doc(receiverId);
-
-      print(receiverId);
-      
-      DocumentReference messageRef;
-      if (widget.friendId != null) {
-        messageRef = FirebaseFirestore.instance
-            .collection('users')
-            .doc(userId)
-            .collection('friends')
-            .doc(widget.friendId)
-            .collection('messages')
-            .doc();
-      } else if (widget.groupId != null) {
-        messageRef = FirebaseFirestore.instance
-            .collection('users')
-            .doc(userId)
-            .collection('groups')
-            .doc(widget.groupId)
-            .collection('messages')
-            .doc();
-      } else {
-        throw Exception('Both friendId and groupId are null.');
+      if (friendId != null) {
+        await _sendMessageToFriend(userId, friendId, messageData);
+      } else if (groupId != null) {
+        await _sendMessageToGroup(userId, groupId, messageData);
       }
 
-      await messageRef.set({
-        'content': messageContent,
-        'senderId': userId,
-        'senderName': currentUsername,
-        // 'receiverId': friendId.id,
-        // 'receiverUsername': widget.friendName,
-        'timestamp': FieldValue.serverTimestamp(),
-      });
-
       _messageController.clear();
+    }
+  }
+
+  Future<void> _sendMessageToFriend(String userId, String friendId, Map<String, dynamic> messageData) async {
+    try {
+      // Add message to the sender's 'friends' subcollection
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('friends')
+          .doc(friendId)
+          .collection('messages')
+          .add(messageData);
+
+      // Add message to the recipient's 'friends' subcollection
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(friendId)
+          .collection('friends')
+          .doc(userId)
+          .collection('messages')
+          .add(messageData);
+
+      print('Message sent to friend successfully');
+    } catch (e) {
+      print('Error sending message to friend: $e');
+    }
+  }
+
+  Future<void> _sendMessageToGroup(String userId, String groupId, Map<String, dynamic> messageData) async {
+    try {
+      // Retrieve the group's member list
+      DocumentSnapshot groupSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('groups')
+          .doc(groupId)
+          .get();
+
+      if (groupSnapshot.exists) {
+        List<dynamic> members = groupSnapshot['members'];
+
+        // Add message to each member's 'groups' subcollection
+        for (String memberId in members) {
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(memberId)
+              .collection('groups')
+              .doc(groupId)
+              .collection('messages')
+              .add(messageData);
+        }
+
+        print('Message sent to group successfully');
+      } else {
+        print('Group not found');
+      }
+    } catch (e) {
+      print('Error sending message to group: $e');
     }
   }
 }

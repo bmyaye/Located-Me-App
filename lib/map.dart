@@ -73,27 +73,4 @@ class _MapsPageState extends State<MapsPage> {
       ),
     );
   }
-
-  Widget _getMarker(BuildContext context) {
-    return Container(
-      width: 40,
-      height: 40,
-      padding: const  EdgeInsets.all(2),
-      decoration: BoxDecoration(
-        color: Colors.white10,
-        borderRadius: BorderRadius.circular(100),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.grey,
-            offset: Offset(0, 3),
-            spreadRadius: 4,
-            blurRadius: 6,
-          )
-        ],
-      ),
-      child: ClipOval(
-        child: Image.asset('assets/oow.jpg'),
-      ),
-    );
-  }
 }

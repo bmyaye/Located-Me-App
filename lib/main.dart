@@ -11,13 +11,13 @@ import 'package:location_app/simple_bloc_observer.dart';
 import 'package:user_repository/user_repository.dart';
 // import 'blocs/authentication_bloc/authentication_bloc.dart';
 import 'screens/auth/blocs/sign_in_bloc/sign_in_bloc.dart';
+import 'screens/chat/chat_list.dart';
 import 'screens/chat/friends_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   Bloc.observer = SimpleBlocObserver();
-
   runApp(MyApp(FirebaseUserRepo()));
 }
 
@@ -147,7 +147,7 @@ class _MyHomePageState extends State<MyHomePage> {
       body: Column(
         children: [
           Expanded(
-            child: buildUserList(),
+            child: UserList(),
           ),
           Padding(
             padding: const EdgeInsets.all(8.0),
