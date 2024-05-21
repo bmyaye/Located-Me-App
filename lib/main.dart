@@ -1,15 +1,15 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
-import 'package:location_app/app.dart';
-import 'package:location_app/map.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+
+import 'package:user_repository/user_repository.dart';
+import 'package:location_app/app.dart';
+import 'package:location_app/map.dart';
 import 'package:location_app/screens/chat/group_page.dart';
 import 'package:location_app/simple_bloc_observer.dart';
-import 'package:user_repository/user_repository.dart';
-// import 'blocs/authentication_bloc/authentication_bloc.dart';
 import 'screens/auth/blocs/sign_in_bloc/sign_in_bloc.dart';
 import 'screens/chat/chat_list.dart';
 import 'screens/chat/friends_page.dart';
@@ -18,6 +18,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   Bloc.observer = SimpleBlocObserver();
+
   runApp(MyApp(FirebaseUserRepo()));
 }
 
@@ -33,7 +34,6 @@ class AppBarApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      // home: const MyHomePage(title: 'Location App'),
     );
   }
 }
@@ -44,37 +44,27 @@ class MyHomePage extends StatefulWidget {
   final String title;
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState('');
+  State<MyHomePage> createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
   int currentPageIndex = 0;
 
-  final String username;
-
-  _MyHomePageState(this.username);
-  
-  // String get currentUsername => username;
-
-  final user = FirebaseAuth.instance.currentUser;
-
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    // final ButtonStyle style = ElevatedButton.styleFrom(textStyle: const TextStyle(fontSize: 20));
+    final user = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
       ),
-
       bottomNavigationBar: NavigationBar(
         onDestinationSelected: (int index) {
           setState(() {
             currentPageIndex = index;
           });
         },
-
         indicatorColor: Colors.amber,
         selectedIndex: currentPageIndex,
         destinations: const <Widget>[
@@ -84,15 +74,9 @@ class _MyHomePageState extends State<MyHomePage> {
             label: 'Home',
           ),
           NavigationDestination(
-            selectedIcon: Icon(Icons.message),
-            icon: Icon(Icons.message_outlined), 
-            label: 'Messages'
-          ),
-          // NavigationDestination(
-          //   selectedIcon: Icon(Icons.notifications),
-          //   icon: Icon(Icons.notifications_outlined),
-          //   label: 'Notifications',
-          // ),
+              selectedIcon: Icon(Icons.message),
+              icon: Icon(Icons.message_outlined),
+              label: 'Messages'),
           NavigationDestination(
             selectedIcon: Icon(Icons.account_box),
             icon: Icon(Icons.account_box_outlined),
@@ -100,11 +84,23 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ],
       ),
-
       body: _buildPage(currentPageIndex, theme),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // Ensure user is not null
+          if (user != null) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => MapsPage(firestoreUserID: user.uid)),
+            );
+          }
+        },
+        tooltip: 'Open Maps',
+        child: const Icon(Icons.near_me),
+      ),
     );
   }
-
 
   Widget _buildPage(int index, ThemeData theme) {
     switch (index) {
@@ -112,8 +108,6 @@ class _MyHomePageState extends State<MyHomePage> {
         return _HomePage(theme);
       case 1:
         return _MessagesPage(context);
-      // case 2:
-      //   return _buildNotificationsPage(theme);
       case 2:
         return _ProfilePage(context);
       default:
@@ -128,16 +122,6 @@ class _MyHomePageState extends State<MyHomePage> {
           'Welcome to Locate Me Application',
           style: theme.textTheme.titleLarge,
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => MapsPage()),
-          );
-        },
-        tooltip: 'Increment',
-        child: const Icon(Icons.near_me),
       ),
     );
   }
@@ -220,5 +204,4 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
     );
   }
-
 }
