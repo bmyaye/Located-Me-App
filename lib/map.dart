@@ -21,7 +21,7 @@ class _MapsPageState extends State<MapsPage> {
   Timer? locationUpdateTimer;
   Map<String, LatLng> friendsLocations = {};
   Map<String, String> friendsUsernames = {};
-  bool locationUpdatesEnabled = true;
+  bool hasActiveLocations = true;
 
   @override
   void initState() {
@@ -45,12 +45,11 @@ class _MapsPageState extends State<MapsPage> {
         var userData = userDoc.data() as Map<String, dynamic>;
         var userName = userData['username'];
         var userId = userData['userId'];
+        hasActiveLocations = userData['hasActiveLocations'] ?? true;
 
         userRef = FirebaseDatabase.instance.ref('users/$userId');
 
-        if (locationUpdatesEnabled) {
-          await setLocation(userName, userId);
-        }
+        await setLocation(userName, userId);
 
         await _getFriendsLocations();
       } else {
@@ -68,20 +67,35 @@ class _MapsPageState extends State<MapsPage> {
   Future<void> setLocation(String userName, String userId) async {
     final position = await _getLocation();
     if (position != null) {
-      setState(() {
-        userLocation = position;
-      });
+      if (mounted) {
+        setState(() {
+          userLocation = position;
+        });
+      }
 
-      locationUpdateTimer = Timer.periodic(const Duration(seconds: 5), (timer) async {
-        if (locationUpdatesEnabled) {
-          final updatedPosition = await _getLocation();
-          if (updatedPosition != null) {
+      locationUpdateTimer =
+          Timer.periodic(const Duration(seconds: 5), (timer) async {
+        final updatedPosition = await _getLocation();
+        if (updatedPosition != null) {
+          if (hasActiveLocations) {
+            print(
+                'Updating location for $userId: (${updatedPosition.latitude}, ${updatedPosition.longitude})');
             userRef.update({
               'username': userName,
               'userId': userId,
               'latitude': updatedPosition.latitude,
               'longitude': updatedPosition.longitude,
+              'hasActiveLocations': true,
             });
+          } else {
+            print('User $userId has deactivated location sharing');
+            userRef.update({
+              'username': userName,
+              'userId': userId,
+              'hasActiveLocations': false,
+            });
+          }
+          if (mounted) {
             setState(() {
               userLocation = updatedPosition;
             });
@@ -102,18 +116,35 @@ class _MapsPageState extends State<MapsPage> {
       for (var doc in friendsSnapshot.docs) {
         var friendId = doc['userId'];
         var friendUsername = doc['username'];
+        print('Friend ID: $friendId');
 
         DatabaseReference friendRef =
             FirebaseDatabase.instance.ref('users/$friendId');
         friendRef.onValue.listen((event) {
           var friendData = event.snapshot.value as Map<dynamic, dynamic>;
-          var latitude = friendData['latitude'];
-          var longitude = friendData['longitude'];
+          print('Friend Data for $friendId: $friendData');
 
-          setState(() {
-            friendsLocations[friendId] = LatLng(latitude, longitude);
-            friendsUsernames[friendId] = friendUsername;
-          });
+          var friendHasActiveLocations =
+              friendData['hasActiveLocations'] ?? true;
+          if (friendHasActiveLocations) {
+            var latitude = friendData['latitude'];
+            var longitude = friendData['longitude'];
+            print('Friend $friendId is visible at ($latitude, $longitude)');
+
+            if (mounted) {
+              setState(() {
+                friendsLocations[friendId] = LatLng(latitude, longitude);
+                friendsUsernames[friendId] = friendUsername;
+              });
+            }
+          } else {
+            print('Friend $friendId is not visible');
+            if (mounted) {
+              setState(() {
+                friendsLocations.remove(friendId);
+              });
+            }
+          }
         });
       }
     } catch (e) {
@@ -127,6 +158,7 @@ class _MapsPageState extends State<MapsPage> {
 
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
+      _showLocationServicesDialog();
       return Future.error('Location services are disabled.');
     }
 
@@ -146,40 +178,42 @@ class _MapsPageState extends State<MapsPage> {
     return await Geolocator.getCurrentPosition();
   }
 
+  void _showLocationServicesDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Location Services Disabled'),
+        content: const Text('Please enable location services to continue.'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Geolocator.openLocationSettings();
+            },
+            child: const Text('Open Settings'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Set<Marker> _createFriendMarkers() {
     return friendsLocations.entries.map((entry) {
+      // 
       String friendId = entry.key;
       LatLng position = entry.value;
       String? username = friendsUsernames[friendId];
 
+      print('Creating marker for friend $friendId at ${position.latitude}, ${position.longitude}');
       return Marker(
         markerId: MarkerId('friend_marker_$friendId'),
-        position: position,
+        position: entry.value,
         icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
-
-        // show info window when tapped
         infoWindow: InfoWindow(
           title: username ?? 'Unknown',
         ),
-        onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(username ?? 'Unknown')),
-          );
-        },
-
       );
     }).toSet();
-  }
-
-  void _toggleLocationUpdates() {
-    setState(() {
-      locationUpdatesEnabled = !locationUpdatesEnabled;
-    });
-    if (locationUpdatesEnabled) {
-      _initializeUser();
-    } else {
-      locationUpdateTimer?.cancel();
-    }
   }
 
   @override
@@ -188,9 +222,19 @@ class _MapsPageState extends State<MapsPage> {
       appBar: AppBar(
         title: const Text('Maps'),
         actions: [
-          IconButton(
-            icon: Icon(locationUpdatesEnabled ? Icons.location_off : Icons.location_on),
-            onPressed: _toggleLocationUpdates,
+          Switch(
+            value: hasActiveLocations,
+            onChanged: (value) {
+              setState(() {
+                hasActiveLocations = value;
+              });
+              print(
+                  'Updating hasActiveLocations for user: $hasActiveLocations');
+              FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(widget.firestoreUserID)
+                  .update({'hasActiveLocations': hasActiveLocations});
+            },
           ),
         ],
       ),
@@ -206,8 +250,10 @@ class _MapsPageState extends State<MapsPage> {
               markers: {
                 Marker(
                   markerId: const MarkerId('user_marker'),
-                  position: LatLng(userLocation!.latitude, userLocation!.longitude),
-                  icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+                  position:
+                      LatLng(userLocation!.latitude, userLocation!.longitude),
+                  icon: BitmapDescriptor.defaultMarkerWithHue(
+                      BitmapDescriptor.hueBlue),
                 ),
                 ..._createFriendMarkers(),
               },
