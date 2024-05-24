@@ -1,0 +1,7 @@
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.android/.gradle/8.7
+.android/.gradle/builddOutputCleanup
+.android/.gradle/noVersion
+.android/.gradle/vcs-1
