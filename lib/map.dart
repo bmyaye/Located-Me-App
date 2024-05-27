@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'screens/chat/chat_page.dart';
 
 class MapsPage extends StatefulWidget {
   final String firestoreUserID;
@@ -21,6 +22,8 @@ class _MapsPageState extends State<MapsPage> {
   Timer? locationUpdateTimer;
   Map<String, LatLng> friendsLocations = {};
   Map<String, String> friendsUsernames = {};
+  Map<String, String> friendsEmails = {};
+  Map<String, String> friendsTels = {};
   bool hasActiveLocations = true;
 
   @override
@@ -45,11 +48,13 @@ class _MapsPageState extends State<MapsPage> {
         var userData = userDoc.data() as Map<String, dynamic>;
         var userName = userData['username'];
         var userId = userData['userId'];
+        var userEmail = userData['email'];
+        var userTel = userData['phoneNumber'];
         hasActiveLocations = userData['hasActiveLocations'] ?? true;
 
         userRef = FirebaseDatabase.instance.ref('users/$userId');
 
-        await setLocation(userName, userId);
+        await setLocation(userName, userId, userEmail, userTel);
 
         await _getFriendsLocations();
       } else {
@@ -64,7 +69,7 @@ class _MapsPageState extends State<MapsPage> {
     mapController = controller;
   }
 
-  Future<void> setLocation(String userName, String userId) async {
+  Future<void> setLocation(String userName, String userId, String userEmail, String userTel) async {
     final position = await _getLocation();
     if (position != null) {
       if (mounted) {
@@ -116,6 +121,8 @@ class _MapsPageState extends State<MapsPage> {
       for (var doc in friendsSnapshot.docs) {
         var friendId = doc['userId'];
         var friendUsername = doc['username'];
+        var friendEmail = doc['email'];
+        var friendTel = doc['phoneNumber'];
         print('Friend ID: $friendId');
 
         DatabaseReference friendRef =
@@ -135,6 +142,8 @@ class _MapsPageState extends State<MapsPage> {
               setState(() {
                 friendsLocations[friendId] = LatLng(latitude, longitude);
                 friendsUsernames[friendId] = friendUsername;
+                friendsEmails[friendId] = friendEmail;
+                friendsTels[friendId] = friendTel;
               });
             }
           } else {
@@ -199,21 +208,82 @@ class _MapsPageState extends State<MapsPage> {
 
   Set<Marker> _createFriendMarkers() {
     return friendsLocations.entries.map((entry) {
-      // 
       String friendId = entry.key;
       LatLng position = entry.value;
       String? username = friendsUsernames[friendId];
+      String? email = friendsEmails[friendId];
+      String? tel = friendsTels[friendId];
 
-      print('Creating marker for friend $friendId at ${position.latitude}, ${position.longitude}');
       return Marker(
         markerId: MarkerId('friend_marker_$friendId'),
         position: entry.value,
         icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
-        infoWindow: InfoWindow(
-          title: username ?? 'Unknown',
-        ),
+        onTap: () {
+          _showFriendOptions(
+              context, 
+              friendId, 
+              username ?? 'Unknown', 
+              position,
+          );
+        },
       );
     }).toSet();
+  }
+
+  void _showFriendOptions(
+      BuildContext context, String friendId, String username, LatLng position) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Center(
+            child: Text(
+              '$username is here!',
+                style: const TextStyle(
+                  color: Colors.blue,
+                ),
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              const SizedBox(height: 8),
+              Text('Email: ${friendsEmails[friendId]}'),
+              Text('Phone: ${friendsTels[friendId]}'),
+              Text('\nDo you want to chat with $username?'),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _navigateToChat(friendId);
+              },
+              child: const Text('Chat'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancel'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _navigateToChat(String friendId) {
+    String? username = friendsUsernames[friendId];
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ChatPage(
+          friendId: friendId,
+          friendName: username,
+        ),
+      ),
+    );
   }
 
   @override

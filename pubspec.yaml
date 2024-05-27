@@ -29,6 +29,8 @@ dependencies:
   cloud_firestore: ^4.17.2
   firebase_database: ^10.5.5
 
+  popover: ^0.3.0+1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
