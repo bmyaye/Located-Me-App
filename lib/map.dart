@@ -211,8 +211,6 @@ class _MapsPageState extends State<MapsPage> {
       String friendId = entry.key;
       LatLng position = entry.value;
       String? username = friendsUsernames[friendId];
-      String? email = friendsEmails[friendId];
-      String? tel = friendsTels[friendId];
 
       return Marker(
         markerId: MarkerId('friend_marker_$friendId'),

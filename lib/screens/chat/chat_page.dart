@@ -153,7 +153,8 @@ class _ChatPageState extends State<ChatPage> {
       Map<String, dynamic> messageData = {
         'senderId': userId,
         'content': messageContent,
-        'timestamp': FieldValue.serverTimestamp(),
+        // 'timestamp': FieldValue.serverTimestamp(),
+        'timestamp': timestamp,
       };
 
       if (friendId != null) {

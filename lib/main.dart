@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -57,48 +58,64 @@ class _MyHomePageState extends State<MyHomePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title),
+        title: Center(
+          child: Text(
+            widget.title,
+          ),
+        ),
+        backgroundColor: const Color.fromARGB(255, 145, 209, 255),
+        foregroundColor: Colors.white,
       ),
       bottomNavigationBar: NavigationBar(
+        backgroundColor: const Color.fromARGB(255, 145, 209, 255),
         onDestinationSelected: (int index) {
           setState(() {
             currentPageIndex = index;
           });
         },
-        indicatorColor: Colors.amber,
+        // indicatorColor: Colors.amber,
+        indicatorColor: Colors.blue,
         selectedIndex: currentPageIndex,
         destinations: const <Widget>[
           NavigationDestination(
-            selectedIcon: Icon(Icons.home),
-            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(
+              Icons.home_outlined,
+              color: Colors.white,
+            ),
+            // icon: Icon(Icons.home_outlined),
+            icon: Icon(
+              Icons.home,
+              color: Colors.blue,
+            ),
             label: 'Home',
           ),
           NavigationDestination(
-              selectedIcon: Icon(Icons.message),
-              icon: Icon(Icons.message_outlined),
-              label: 'Messages'),
+            selectedIcon: Icon(
+              Icons.message_outlined,
+              color: Colors.white,
+            ),
+            // icon: Icon(Icons.message_outlined),
+            icon: Icon(
+              Icons.message,
+              color: Colors.blue,
+            ),
+            label: 'Messages'
+          ),
           NavigationDestination(
-            selectedIcon: Icon(Icons.account_box),
-            icon: Icon(Icons.account_box_outlined),
+            selectedIcon: Icon(
+              Icons.account_box_outlined,
+              color: Colors.white,
+            ),
+            // icon: Icon(Icons.account_box_outlined),
+            icon: Icon(
+              Icons.account_box,
+              color: Colors.blue,
+            ),
             label: 'Account',
           ),
         ],
       ),
       body: _buildPage(currentPageIndex, theme),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Ensure user is not null
-          if (user != null) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => MapsPage(firestoreUserID: user.uid)),
-            );
-          }
-        },
-        tooltip: 'Open Maps',
-        child: const Icon(Icons.near_me),
-      ),
     );
   }
 
@@ -116,13 +133,161 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Widget _HomePage(ThemeData theme) {
+    final user = FirebaseAuth.instance.currentUser;
+    final double width = MediaQuery.of(context).size.width;
+    CollectionReference users = FirebaseFirestore.instance.collection('users');
     return Scaffold(
-      body: Center(
-        child: Text(
-          'Welcome to Locate Me Application',
-          style: theme.textTheme.titleLarge,
+      backgroundColor: Colors.blue[40],
+      body: SafeArea(
+        child: FutureBuilder<DocumentSnapshot>(
+          future: users.doc(user!.uid).get(),
+          builder: (context, AsyncSnapshot<DocumentSnapshot> snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (snapshot.hasError) {
+              return Center(child: Text("Error: ${snapshot.error}"));
+            } else if (!snapshot.hasData || !snapshot.data!.exists) {
+              return const Center(child: Text("User data not found"));
+            } else {
+              var userData = snapshot.data!.data() as Map<String, dynamic>;
+              var username = userData['username'];
+              return Column(
+                children: <Widget>[
+                  Container(
+                    height: 150,
+                    width: width,
+                    decoration: BoxDecoration(
+                        color: const Color.fromARGB(255, 145, 209, 255),
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(30.0),
+                          bottomRight: Radius.circular(30.0),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.5),
+                            spreadRadius: 5,
+                            blurRadius: 7,
+                            offset: const Offset(0, 3),
+                          ),
+                        ]),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: <Widget>[
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 0, vertical: 0.0
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: <Widget>[
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: <Widget>[
+                                  Container(
+                                    child: Text(
+                                      username,
+                                      textAlign: TextAlign.start,
+                                      style: TextStyle(
+                                        fontSize: 50.0,
+                                        color: Colors.blue[900],
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                  ),
+                                  Container(
+                                    child: const Text(
+                                      'Application User',
+                                      textAlign: TextAlign.start,
+                                      style: TextStyle(
+                                        fontSize: 16.0,
+                                        color: Colors.black54,
+                                        fontWeight: FontWeight.w400,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              )
+                            ],
+                          ),
+                        )
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: Center(
+                      child: Card(
+                        elevation: 60,
+                        shadowColor: Colors.black,
+                        color: Colors.blueAccent[50],
+                        child: SizedBox(
+                          width: 400,
+                          height: 575,
+                          child: Padding(
+                            padding: const EdgeInsets.all(20.0),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const CircleAvatar(
+                                  backgroundColor: Colors.blue,
+                                  radius: 100,
+                                  child: Center(
+                                    child: Text(
+                                      '📍',
+                                      style: TextStyle(
+                                        fontSize: 100,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color.fromARGB(255, 145, 209, 255),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 50),
+                                Text(
+                                  'Welcome to Locate Me Application',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    color: Colors.blue[900],
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                Text(
+                                  'test',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    color: Colors.blue[900],
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            }
+          },
         ),
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      floatingActionButton: user != null
+          ? FloatingActionButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => MapsPage(firestoreUserID: user.uid),
+                  ),
+                );
+              },
+              tooltip: 'Open Maps',
+              child: const Icon(Icons.near_me),
+            )
+          : null,
     );
   }
 
