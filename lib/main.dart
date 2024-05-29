@@ -293,30 +293,42 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Widget _MessagesPage(BuildContext context) {
     return Scaffold(
-      body: Column(
-        children: [
-          Expanded(
-            child: UserList(),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: ElevatedButton(
-              onPressed: () {
-                FriendManager(context).showAddFriendDialog();
-              },
-              child: const Text('Add Friends'),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: ElevatedButton(
-              onPressed: () {
-                GroupManager(context).showCreateGroupDialog();
-              },
-              child: const Text('Create Group'),
-            ),
-          ),
-        ],
+      backgroundColor: Colors.grey[100],
+      body: UserList(),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                backgroundColor: Colors.blue[50],
+                title: const Text('Choose an action'),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.person_add),
+                      title: const Text('Add Friends'),
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        FriendManager(context).showAddFriendDialog();
+                      },
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.group_add),
+                      title: const Text('Create Group'),
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        GroupManager(context).showCreateGroupDialog();
+                      },
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        },
+        child: const Icon(Icons.add),
       ),
     );
   }

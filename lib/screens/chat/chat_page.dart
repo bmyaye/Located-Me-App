@@ -74,7 +74,7 @@ class _ChatPageState extends State<ChatPage> {
                               child: Container(
                                 padding: const EdgeInsets.all(8.0),
                                 decoration: BoxDecoration(
-                                  color: isSentMessage ? Colors.blue.withOpacity(0.2) : Colors.yellow.withOpacity(0.2),
+                                  color: isSentMessage ? const Color.fromARGB(255, 145, 209, 255) : Colors.blue,
                                   borderRadius: isSentMessage
                                       ? const BorderRadius.only(
                                           topLeft: Radius.circular(12.0),
@@ -89,6 +89,10 @@ class _ChatPageState extends State<ChatPage> {
                                 ),
                                 child: Text(
                                   message['content'],
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    // backgroundColor: isSentMessage ? Colors.transparent : Colors.white,
+                                  ),
                                 ),
                               ),
                             ),

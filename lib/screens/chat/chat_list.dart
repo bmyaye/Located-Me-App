@@ -30,23 +30,44 @@ class _UserListState extends State<UserList> {
         List<DocumentSnapshot> friends = data['friends'];
         List<DocumentSnapshot> groups = data['groups'];
 
-        return ListView(
-          children: [
-            const ListTile(
-              title: Center(
-                child: Text('Friends'),
+        return DefaultTabController(
+          length: 2,
+          child: Column(
+            children: [
+              const TabBar(
+                labelColor: Color.fromARGB(255, 13, 71, 161),
+                unselectedLabelColor: Color.fromARGB(255, 145, 209, 255),
+                indicatorColor: Colors.lightBlue,
+                labelStyle: TextStyle(
+                  fontSize: 19, fontWeight: FontWeight.bold,
+                ),
+                tabs: [
+                  Tab(text: 'Friends'),
+                  Tab(text: 'Groups'),
+                ],
               ),
-              textColor: Colors.blue,
-            ),
-            ...friends.map((doc) => _buildUserListItem(doc, 'friend')).toList(),
-            const ListTile(
-              title: Center(
-                child: Text('Groups'),
+              Expanded(
+                child: TabBarView(
+                  children: [
+                    ListView(
+                      children: [
+                        ...friends
+                            .map((doc) => _buildUserListItem(doc, 'friend'))
+                            .toList(),
+                      ],
+                    ),
+                    ListView(
+                      children: [
+                        ...groups
+                            .map((doc) => _buildUserListItem(doc, 'group'))
+                            .toList(),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-              textColor: Colors.blue,
-            ),
-            ...groups.map((doc) => _buildUserListItem(doc, 'group')).toList(),
-          ],
+            ],
+          ),
         );
       },
     );
