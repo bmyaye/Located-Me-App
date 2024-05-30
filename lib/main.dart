@@ -299,7 +299,7 @@ class _MyHomePageState extends State<MyHomePage> {
         onPressed: () {
           showDialog(
             context: context,
-            builder: (BuildContext context) {
+            builder: (BuildContext dialogContext) {
               return AlertDialog(
                 backgroundColor: Colors.blue[50],
                 title: const Text('Choose an action'),
@@ -318,7 +318,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       leading: const Icon(Icons.group_add),
                       title: const Text('Create Group'),
                       onTap: () {
-                        Navigator.of(context).pop();
+                        Navigator.of(dialogContext).pop();
                         GroupManager(context).showCreateGroupDialog();
                       },
                     ),
