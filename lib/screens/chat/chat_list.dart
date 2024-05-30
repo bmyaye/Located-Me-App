@@ -51,16 +51,12 @@ class _UserListState extends State<UserList> {
                   children: [
                     ListView(
                       children: [
-                        ...friends
-                            .map((doc) => _buildUserListItem(doc, 'friend'))
-                            .toList(),
+                        ...friends.map((doc) => _buildUserListItem(doc, 'friend')).toList(),
                       ],
                     ),
                     ListView(
                       children: [
-                        ...groups
-                            .map((doc) => _buildUserListItem(doc, 'group'))
-                            .toList(),
+                        ...groups.map((doc) => _buildUserListItem(doc, 'group')).toList(),
                       ],
                     ),
                   ],
@@ -101,7 +97,6 @@ class _UserListState extends State<UserList> {
     Map<String, dynamic>? data = document.data() as Map<String, dynamic>?;
 
     if (data == null) {
-      // Handle null data gracefully
       return ListTile(
         title: Text('Unknown $type'),
         trailing: IconButton(
@@ -114,28 +109,61 @@ class _UserListState extends State<UserList> {
     }
 
     String title = type == 'friend' ? data['username'] ?? 'Unknown username' : data['groupName'] ?? 'Unknown group';
-    
+
     return ListTile(
       title: Text(title),
-      trailing: IconButton(
-        icon: const Icon(Icons.arrow_forward_ios),
-        onPressed: () {
-          if (type == 'friend') {
-            ChatManager().openChatPage(
-              context,
-              friendId: document.id,
-              friendName: data['username'],
-            );
-          } else {
-            ChatManager().openChatPage(
-              context,
-              groupId: document.id,
-              groupName: data['groupName'],
-            );
-          }
-        },
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.arrow_forward_ios_outlined),
+            onPressed: () {
+              if (type == 'friend') {
+                ChatManager().openChatPage(
+                  context,
+                  friendId: document.id,
+                  friendName: data['username'],
+                );
+              } else {
+                ChatManager().openChatPage(
+                  context,
+                  groupId: document.id,
+                  groupName: data['groupName'],
+                );
+              }
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.person_remove),
+            onPressed: () {
+              _deleteItem(type, document.id);
+            },
+          ),
+        ],
       ),
     );
+  }
+
+  void _deleteItem(String type, String docId) async {
+    User? currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) {
+      throw Exception('User is not authenticated');
+    }
+
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser.uid)
+          .collection(type == 'friend' ? 'friends' : 'groups')
+          .doc(docId)
+          .delete();
+
+      setState(() {});
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to delete $type: $e')),
+      );
+    }
   }
 }
 
