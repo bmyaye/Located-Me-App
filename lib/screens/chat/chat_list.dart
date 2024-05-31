@@ -146,17 +146,29 @@ class _UserListState extends State<UserList> {
 
   void _deleteItem(String type, String docId) async {
     User? currentUser = FirebaseAuth.instance.currentUser;
+
     if (currentUser == null) {
       throw Exception('User is not authenticated');
     }
 
     try {
+      // Delete the friend/group from the current user's collection
       await FirebaseFirestore.instance
           .collection('users')
           .doc(currentUser.uid)
           .collection(type == 'friend' ? 'friends' : 'groups')
           .doc(docId)
           .delete();
+
+      // If it's a friend, delete the current user from the friend's collection
+      if (type == 'friend') {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(docId)
+            .collection('friends')
+            .doc(currentUser.uid)
+            .delete();
+      }
 
       setState(() {});
     } catch (e) {
