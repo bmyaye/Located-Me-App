@@ -152,22 +152,81 @@ class _UserListState extends State<UserList> {
     }
 
     try {
-      // Delete the friend/group from the current user's collection
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(currentUser.uid)
-          .collection(type == 'friend' ? 'friends' : 'groups')
-          .doc(docId)
-          .delete();
-
-      // If it's a friend, delete the current user from the friend's collection
       if (type == 'friend') {
+        // Delete the friend from the current user's collection
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(currentUser.uid)
+            .collection('friends')
+            .doc(docId)
+            .delete();
+
+        // Delete the current user from the friend's collection
         await FirebaseFirestore.instance
             .collection('users')
             .doc(docId)
             .collection('friends')
             .doc(currentUser.uid)
             .delete();
+      } else if (type == 'group') {
+        // Assume the group document is under the current user's 'groups' collection
+        DocumentSnapshot groupDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(currentUser.uid)
+            .collection('groups')
+            .doc(docId)
+            .get();
+
+        if (groupDoc.exists) {
+          Map<String, dynamic>? groupData = groupDoc.data() as Map<String, dynamic>?;
+          if (groupData != null && groupData.containsKey('members')) {
+            List<String> memberIds = List<String>.from(groupData['members']);
+
+            // Remove the current user from the group's member list
+            memberIds.remove(currentUser.uid);
+
+            // Update the group's member list within the user's document
+            await FirebaseFirestore.instance
+                .collection('users')
+                .doc(currentUser.uid)
+                .collection('groups')
+                .doc(docId)
+                .update({'members': memberIds});
+
+            // Optionally update the group's member list in each member's document if it exists there
+            for (String memberId in memberIds) {
+              DocumentSnapshot memberGroupDoc = await FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(memberId)
+                  .collection('groups')
+                  .doc(docId)
+                  .get();
+
+              if (memberGroupDoc.exists) {
+                List<String> memberIdsForMember = List<String>.from((memberGroupDoc.data() as Map<String, dynamic>)['members']);
+                memberIdsForMember.remove(currentUser.uid);
+                await FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(memberId)
+                    .collection('groups')
+                    .doc(docId)
+                    .update({'members': memberIdsForMember});
+              }
+            }
+
+            // Delete the group reference from the current user's collection
+            await FirebaseFirestore.instance
+                .collection('users')
+                .doc(currentUser.uid)
+                .collection('groups')
+                .doc(docId)
+                .delete();
+          } else {
+            throw Exception("Group document does not contain 'members' field");
+          }
+        } else {
+          throw Exception("Group document does not exist");
+        }
       }
 
       setState(() {});
