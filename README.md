@@ -7,11 +7,6 @@ This project was developed during the internship program at Department of Scienc
 - [Introduction](#introduction)
 - [Project Description](#project-description)
 - [Features](#features)
-- [Technologies Used](#technologies-used)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Contributing](#contributing)
-- [License](#license)
 - [Contact](#contact)
 
 ## Introduction
