@@ -1,6 +1,8 @@
+import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 class GroupManager {
   final BuildContext context;
@@ -41,6 +43,58 @@ class GroupManager {
     );
   }
 
+  void showQRDialog(BuildContext context, String groupId, String groupName) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            'Group QR Code',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.blue[900],
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text('Group Name: $groupName'),
+              SizedBox(height: 10), // Adjust as needed
+              FutureBuilder<Uint8List?>(
+                future: _generateQrImageData(groupId),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return CircularProgressIndicator();
+                  }
+
+                  if (snapshot.hasError) {
+                    return Text('Error: ${snapshot.error}');
+                  }
+
+                  return Image.memory(snapshot.data!);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<Uint8List> _generateQrImageData(String groupId) async {
+    final qrPainter = QrPainter(
+      data: groupId,
+      version: QrVersions.auto,
+      errorCorrectionLevel: QrErrorCorrectLevel.L,
+    );
+    final imageSize = 200.0;
+    final image = await qrPainter.toImageData(imageSize);
+
+    return image?.buffer.asUint8List() ?? Uint8List(0);
+  }
+
   Future<void> _createGroup(String groupName) async {
     try {
       User? currentUser = FirebaseAuth.instance.currentUser;
@@ -52,15 +106,36 @@ class GroupManager {
         );
 
         if (selectedFriends != null && selectedFriends.isNotEmpty) {
-          String groupId = firestore.collection('users').doc(currentUser.uid).collection('groups').doc().id;
-          
-          await firestore.collection('users').doc(currentUser.uid).collection('groups').doc(groupId).set({
+          String groupId = firestore.collection('groups_list').doc().id;
+          List<String> allMembers = [currentUser.uid, ...selectedFriends];
+
+          // Create the group in the main 'groups' collection
+          await firestore.collection('groups_list').doc(groupId).set({
             'groupName': groupName,
+            'groupId': groupId,
             'creator': currentUser.uid,
-            'members': [currentUser.uid, ...selectedFriends],
+            'createdAt': FieldValue.serverTimestamp(),
+            'members': allMembers,
           });
 
-          await _addGroupToUsers(groupId, groupName, currentUser.uid, selectedFriends);
+          // Add the members to the 'members' subcollection
+          for (String memberId in allMembers) {
+            await firestore
+                .collection('groups_list')
+                .doc(groupId)
+                .collection('members')
+                .doc(memberId)
+                .set({
+              'joinedAt': FieldValue.serverTimestamp(),
+            });
+          }
+
+          // Add the group reference to the users' documents
+          await _addGroupToUsers(
+              groupId, groupName, currentUser.uid, allMembers);
+
+          // Show the QR dialog
+          showQRDialog(context, groupId, groupName);
         } else {
           print('No friends selected.');
         }
@@ -72,16 +147,24 @@ class GroupManager {
     }
   }
 
-  Future<void> _addGroupToUsers(String groupId, String groupName, String creatorId, List<String> memberIds) async {
+  Future<void> _addGroupToUsers(String groupId, String groupName,
+      String creatorId, List<String> memberIds) async {
     try {
       for (String memberId in memberIds) {
-        await firestore.collection('users').doc(memberId).collection('groups').doc(groupId).set({
+        await firestore
+            .collection('users')
+            .doc(memberId)
+            .collection('groups')
+            .doc(groupId)
+            .set({
           'groupId': groupId,
           'groupName': groupName,
           'creator': creatorId,
-          'members': [creatorId, ...memberIds],
+          'joinedAt': FieldValue.serverTimestamp(),
+          'members': memberIds,
         }, SetOptions(merge: true));
       }
+
       print('Group data added to all members\' databases.');
     } catch (e) {
       print('Error adding group to members: $e');

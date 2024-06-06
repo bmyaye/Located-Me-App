@@ -82,9 +82,8 @@ class _UserListState extends State<UserList> {
         .get();
 
     QuerySnapshot groupsSnapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(currentUser.uid)
-        .collection('groups')
+        .collection('groups_list')
+        .where('members', arrayContains: currentUser.uid)
         .get();
 
     return {
@@ -96,7 +95,7 @@ class _UserListState extends State<UserList> {
   Widget _buildUserListItem(DocumentSnapshot document, String type) {
     Map<String, dynamic>? data = document.data() as Map<String, dynamic>?;
 
-    if (data == null) {
+    if (data == null) { 
       return ListTile(
         title: Text('Unknown $type'),
         trailing: IconButton(
@@ -108,7 +107,9 @@ class _UserListState extends State<UserList> {
       );
     }
 
-    String title = type == 'friend' ? data['username'] ?? 'Unknown username' : data['groupName'] ?? 'Unknown group';
+    String title = type == 'friend'
+        ? data['username'] ?? 'Unknown username'
+        : data['groupName'] ?? 'Unknown group';
 
     return ListTile(
       title: Text(title),

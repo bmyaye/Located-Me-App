@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import 'package:location_app/screens/chat/group_page.dart';
+
 class ChatPage extends StatefulWidget {
   final String? friendId;
   final String? friendName;
@@ -35,6 +37,14 @@ class _ChatPageState extends State<ChatPage> {
                 // Add a member to the group
                 // Unfinished
                 _addFriendtoGroup('group', widget.groupId!);
+              },
+            ),
+            IconButton(
+              icon: Icon(Icons.qr_code),
+              onPressed: () {
+                Navigator.of(context).pop();
+                GroupManager(context)
+                    .showQRDialog(context, widget.groupId!, widget.groupName!);
               },
             ),
           IconButton(
@@ -84,18 +94,24 @@ class _ChatPageState extends State<ChatPage> {
                       itemCount: messages.length,
                       itemBuilder: (context, index) {
                         var message = messages[index];
-                        bool isSentMessage = message['senderId'] == FirebaseAuth.instance.currentUser!.uid;
+                        bool isSentMessage = message['senderId'] ==
+                            FirebaseAuth.instance.currentUser!.uid;
 
                         return Column(
-                          crossAxisAlignment: isSentMessage ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                          crossAxisAlignment: isSentMessage
+                              ? CrossAxisAlignment.end
+                              : CrossAxisAlignment.start,
                           children: [
-                            const SizedBox(height: 8.0), 
+                            const SizedBox(height: 8.0),
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16.0),
                               child: Container(
                                 padding: const EdgeInsets.all(8.0),
                                 decoration: BoxDecoration(
-                                  color: isSentMessage ? const Color.fromARGB(255, 145, 209, 255) : Colors.blue,
+                                  color: isSentMessage 
+                                      ? const Color.fromARGB(255, 145, 209, 255) 
+                                      : Colors.blue,
                                   borderRadius: isSentMessage
                                       ? const BorderRadius.only(
                                           topLeft: Radius.circular(12.0),
@@ -155,7 +171,8 @@ class _ChatPageState extends State<ChatPage> {
                     ),
                     IconButton(
                       icon: const Icon(Icons.send),
-                      onPressed: () => _sendMessage(widget.friendId, widget.groupId),
+                      onPressed: () =>
+                          _sendMessage(widget.friendId, widget.groupId),
                       color: Colors.lightBlue,
                     ),
                   ],
@@ -192,7 +209,9 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
-  Future<void> _sendMessageToFriend(String userId, String friendId, Map<String, dynamic> messageData) async {
+  Future<void> _sendMessageToFriend(
+      String userId, String friendId, Map<String, dynamic> messageData) async {
+
     try {
       // Add message to the sender's 'friends' subcollection
       await FirebaseFirestore.instance
@@ -210,7 +229,7 @@ class _ChatPageState extends State<ChatPage> {
           .collection('friends')
           .doc(userId)
           .collection('messages')
-          .add(messageData);
+          .add(messageData );
 
       print('Message sent to friend successfully');
     } catch (e) {
@@ -218,7 +237,8 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
-  Future<void> _sendMessageToGroup(String userId, String groupId, Map<String, dynamic> messageData) async {
+  Future<void> _sendMessageToGroup(
+      String userId, String groupId, Map<String, dynamic> messageData) async {
     try {
       // Retrieve the group's member list
       DocumentSnapshot groupSnapshot = await FirebaseFirestore.instance

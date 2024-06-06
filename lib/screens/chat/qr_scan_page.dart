@@ -28,11 +28,13 @@ class _QRScanPageState extends State<QRScanPage> {
       if (await Permission.camera.request().isGranted) {
         // Permission granted, do nothing
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Camera permission is required to scan QR codes.'),
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Camera permission is required to scan QR codes.'),
+            ),
+          );
+        }
       }
     }
   }
@@ -47,7 +49,7 @@ class _QRScanPageState extends State<QRScanPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Scan QR Code')),
+      appBar: AppBar(title: const Text('Scan QR Code')),
       body: Column(
         children: <Widget>[
           Expanded(
@@ -63,7 +65,7 @@ class _QRScanPageState extends State<QRScanPage> {
               child: (result != null)
                   ? Text(
                       'Barcode Type: ${result!.format}   Data: ${result!.code}')
-                  : Text('Scan a code'),
+                  : const Text('Scan a code'),
             ),
           )
         ],
@@ -97,33 +99,41 @@ class _QRScanPageState extends State<QRScanPage> {
 
     try {
       final doc = await FirebaseFirestore.instance
-          .collection('groups')
+          .collection('groups_list') // Change 'groups' to 'groups_list' here
           .doc(groupId)
           .get();
       if (doc.exists) {
         await joinGroup(groupId);
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Group found: $groupId')));
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) =>
-                ChatPage(groupId: groupId, groupName: doc['groupName']),
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text('Group found: $groupId')));
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) =>
+                  ChatPage(groupId: groupId, groupName: doc['groupName']),
+            ),
+          );
+        }
       } else {
-        print('Group not found for groupId: $groupId');
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Group not found')));
+        if (mounted) {
+          print('Group not found for groupId: $groupId');
+          ScaffoldMessenger.of(context)
+              .showSnackBar(const SnackBar(content: Text('Group not found')));
+        }
       }
     } catch (e) {
-      print('Error checking groupId: $e');
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Error checking groupId')));
+      if (mounted) {
+        print('Error checking groupId: $e');
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Error checking groupId')));
+      }
     } finally {
-      setState(() {
-        isCheckingGroup = false;
-      });
+      if (mounted) {
+        setState(() {
+          isCheckingGroup = false;
+        });
+      }
     }
   }
 
@@ -136,7 +146,7 @@ class _QRScanPageState extends State<QRScanPage> {
     String userId = currentUser.uid;
 
     DocumentReference groupRef =
-        FirebaseFirestore.instance.collection('groups').doc(groupId);
+        FirebaseFirestore.instance.collection('groups_list').doc(groupId); // Change 'groups' to 'groups_list' here
 
     DocumentSnapshot groupSnapshot = await groupRef.get();
     if (groupSnapshot.exists) {

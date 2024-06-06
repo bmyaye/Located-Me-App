@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:percent_indicator/percent_indicator.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -14,6 +15,7 @@ import 'package:location_app/simple_bloc_observer.dart';
 import 'screens/auth/blocs/sign_in_bloc/sign_in_bloc.dart';
 import 'screens/chat/chat_list.dart';
 import 'screens/chat/friends_page.dart';
+import 'package:location_app/screens/chat/qr_scan_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -315,7 +317,18 @@ class _MyHomePageState extends State<MyHomePage> {
                       },
                     ),
                     ListTile(
-                      leading: const Icon(Icons.group_add),
+                      leading: const Icon(Icons.group_add_rounded),
+                      title: const Text('Join Group'),
+                      onTap: () {
+                        Navigator.of(dialogContext).pop();
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => QRScanPage()),
+                        );
+                      },
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.groups),
                       title: const Text('Create Group'),
                       onTap: () {
                         Navigator.of(dialogContext).pop();
