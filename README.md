@@ -7,7 +7,7 @@ This project was developed during the internship program at Department of Scienc
 - [Introduction](#introduction)
 - [Project Description](#project-description)
 - [Features](#features)
-- [Contact](#contact)
+- [Collaborators](#collaborators)
 
 ## Introduction
 Welcome to the Located Me repository! This project is developed as part of the internship program at Department of Science Service. The main objective of this project is to create a robust application for real-time location tracking and communication.
