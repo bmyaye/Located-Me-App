@@ -27,6 +27,27 @@ class _ChatPageState extends State<ChatPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.friendName ?? widget.groupName ?? 'Chat'),
+        actions: [
+          if (widget.groupId != null)
+            IconButton(
+              icon: const Icon(Icons.person_add),
+              onPressed: () {
+                // Add a member to the group
+                // Unfinished
+                _addFriendtoGroup('group', widget.groupId!);
+              },
+            ),
+          IconButton(
+            icon: const Icon(Icons.person_remove),
+            onPressed: () {
+              if (widget.friendId != null) {
+                _unFriend('friend', widget.friendId!);
+              } else if (widget.groupId != null) {
+                _leftGroup('group', widget.groupId!);
+              }
+            },
+          ),
+        ],
       ),
       body: SafeArea(
         child: Column(
@@ -227,6 +248,141 @@ class _ChatPageState extends State<ChatPage> {
       }
     } catch (e) {
       print('Error sending message to group: $e');
+    }
+  }
+
+  void _unFriend(String type, String docId) async {
+    User? currentUser = FirebaseAuth.instance.currentUser;
+
+    if (currentUser == null) {
+      throw Exception('User is not authenticated');
+    }
+
+    try {
+      if (type == 'friend') {
+        // Delete the friend from the current user's collection
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(currentUser.uid)
+            .collection('friends')
+            .doc(docId)
+            .delete();
+
+        // Delete the current user from the friend's collection
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(docId)
+            .collection('friends')
+            .doc(currentUser.uid)
+            .delete();
+      } else {
+        throw Exception("Friend document does not exist");
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to delete $type: $e')),
+      );
+    }
+  }
+
+  void _addFriendtoGroup(String type, String docId) async {
+    User? currentUser = FirebaseAuth.instance.currentUser;
+
+    if (currentUser == null) {
+      throw Exception('User is not authenticated');
+    }
+
+    try {
+      if (type == 'group') {
+        DocumentSnapshot groupDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(currentUser.uid)
+            .collection('groups')
+            .doc(docId)
+            .get();
+        
+      } else {
+        throw Exception("Group document does not exist");
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to add $type: $e')),
+      );
+    }
+  }
+
+  void _leftGroup(String type, String docId) async {
+    User? currentUser = FirebaseAuth.instance.currentUser;
+
+    if (currentUser == null) {
+      throw Exception('User is not authenticated');
+    }
+
+    try {
+      if (type == 'group') {
+        // Assume the group document is under the current user's 'groups' collection
+        DocumentSnapshot groupDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(currentUser.uid)
+            .collection('groups')
+            .doc(docId)
+            .get();
+
+        if (groupDoc.exists) {
+          Map<String, dynamic>? groupData = groupDoc.data() as Map<String, dynamic>?;
+          if (groupData != null && groupData.containsKey('members')) {
+            List<String> memberIds = List<String>.from(groupData['members']);
+
+            // Remove the current user from the group's member list
+            memberIds.remove(currentUser.uid);
+
+            // Update the group's member list within the user's document
+            await FirebaseFirestore.instance
+                .collection('users')
+                .doc(currentUser.uid)
+                .collection('groups')
+                .doc(docId)
+                .update({'members': memberIds});
+
+            // Optionally update the group's member list in each member's document if it exists there
+            for (String memberId in memberIds) {
+              DocumentSnapshot memberGroupDoc = await FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(memberId)
+                  .collection('groups')
+                  .doc(docId)
+                  .get();
+
+              if (memberGroupDoc.exists) {
+                List<String> memberIdsForMember = List<String>.from((memberGroupDoc.data() as Map<String, dynamic>)['members']);
+                memberIdsForMember.remove(currentUser.uid);
+                await FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(memberId)
+                    .collection('groups')
+                    .doc(docId)
+                    .update({'members': memberIdsForMember});
+              }
+            }
+
+            // Delete the group reference from the current user's collection
+            await FirebaseFirestore.instance
+                .collection('users')
+                .doc(currentUser.uid)
+                .collection('groups')
+                .doc(docId)
+                .delete();
+          } else {
+            throw Exception("Group document does not contain 'members' field");
+          }
+        } else {
+          throw Exception("Group document does not exist");
+        }
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to delete $type: $e')),
+      );
     }
   }
 }
