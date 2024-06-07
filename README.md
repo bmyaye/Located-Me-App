@@ -26,6 +26,6 @@ Located Me is a cutting-edge application designed to enhance social interactions
 This project was made possible by the collaborative efforts of:
 
 - **Ai Mousika (https://github.com/bmyaye)**
-- **Chayanin Maneesaeng (https://github.com/Chayanin086)**
+- **Chayanin Manisaeng (https://github.com/Chayanin086)**
 
 We extend our heartfelt thanks to all the contributors who have dedicated their time and expertise to make this project successful.
