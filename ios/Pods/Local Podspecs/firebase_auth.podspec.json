@@ -14,7 +14,7 @@
   "source_files": "Classes/**/*.{h,m}",
   "public_header_files": "Classes/**/*.h",
   "platforms": {
-    "ios": "11.0"
+    "ios": "14.0"
   },
   "dependencies": {
     "Flutter": [
@@ -24,7 +24,7 @@
 
     ],
     "Firebase/Auth": [
-      "10.24.0"
+      "10.25.0"
     ]
   },
   "static_framework": true,
