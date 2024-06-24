@@ -12,5 +12,4 @@ ios/Runner/GoogleService-Info.plist
 .idea/
 .DS_Store
 .metadata
-.gitignore.save
 firebase.json
