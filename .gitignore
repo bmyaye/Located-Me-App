@@ -9,3 +9,8 @@ android/.gradle/file-system.probe
 build/
 android/app/google-services.json
 ios/Runner/GoogleService-Info.plist
+.idea/
+.DS_Store
+.metadata
+.gitignore.save
+firebase.json
