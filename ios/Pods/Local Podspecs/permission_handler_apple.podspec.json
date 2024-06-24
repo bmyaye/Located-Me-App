@@ -21,7 +21,7 @@
     ]
   },
   "platforms": {
-    "ios": "14.0"
+    "ios": "8.0"
   },
   "static_framework": true,
   "resource_bundles": {

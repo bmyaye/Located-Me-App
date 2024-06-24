@@ -15,7 +15,7 @@
   "public_header_files": "Classes/Public/*.h",
   "private_header_files": "Classes/Private/*.h",
   "platforms": {
-    "ios": "14.0"
+    "ios": "11.0"
   },
   "dependencies": {
     "Flutter": [

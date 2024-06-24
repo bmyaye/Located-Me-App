@@ -7,3 +7,5 @@ android/.gradle/noVersion
 android/.gradle/vcs-1
 android/.gradle/file-system.probe
 build/
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
